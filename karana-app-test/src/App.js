@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
+import './css/bootstrap.css';
+import  { Table, Nav, NavItem } from 'react-bootstrap';
 
 class KaranaPropertiesRow extends Component {
   render() {
@@ -39,7 +41,6 @@ class UserRow extends Component {
     this.handleUserSelection = this.handleUserSelection.bind(this);
   }
 	handleUserSelection(e) {
-		console.log(this.props.user)
     this.props.onUserSelection(this.props.user.name,'show');
   }
   render() {
@@ -59,7 +60,6 @@ class UserRow2 extends Component {
     this.handleAddKarana = this.handleAddKarana.bind(this);
   }
 	handleAddKarana(e) {
-		console.log(this.props.user)
     this.props.onAddKarana('karana','form');
   }
   render() {
@@ -159,55 +159,11 @@ class UserForm extends Component {
   }
 }
 
-class SideBar extends Component {
-  constructor(props) {
-    super(props);
-    this.handleUserShowSelection = this.handleUserShowSelection.bind(this);
-    this.handleKaranaShowSelection = this.handleKaranaShowSelection.bind(this);    
-    this.handleUserFormSelection = this.handleUserFormSelection.bind(this);
-    this.handleKaranaFormSelection = this.handleKaranaFormSelection.bind(this);
-  }
-  handleUserShowSelection(e) {
-    this.props.onResourceSelection('user','show');
-    console.log(e);
-  }
-  
-  handleKaranaShowSelection(e) {
-    this.props.onResourceSelection('karana','show');
-    console.log(e);
-  }
-
-  handleUserFormSelection(e) {
-    this.props.onResourceSelection('user','form');
-    console.log(e);
-  }
-  
-  handleKaranaFormSelection(e) {
-    this.props.onResourceSelection('karana','form');
-    console.log(e);
-  }
-
-  render() {
-    return(
-      <div>
-        <ul>
-          <li >
-            <a onClick={this.handleUserShowSelection}>Show Users</a>
-          </li>
-          <li >
-            <a onClick={this.handleUserFormSelection}> Add User </a>
-          </li>
-        </ul>
-      </div>
-    );
-  }
-}
 
 class UsersShow extends Component {
 	constructor(props) {
     super(props);
     this.handleUserSelection = this.handleUserSelection.bind(this);
-    console.log(this)
   }
 
 	handleUserSelection(user_id,type) {
@@ -220,12 +176,12 @@ class UsersShow extends Component {
       rows.push(<UserRow user={user} key={user.name} onUserSelection={this.handleUserSelection} />)
     );
     return (
-      <table>
+      <Table striped bordered condensed hover>
         <thead>
           <UserPropertiesRow />
         </thead>
         <tbody>{rows}</tbody>
-      </table>
+      </Table>
     );
   }
 }
@@ -234,7 +190,6 @@ class UserShow extends Component {
 	constructor(props) {
     super(props);
     this.handleAddKarana = this.handleAddKarana.bind(this);
-    console.log(this)
   }
 
 	handleAddKarana(resource,type) {
@@ -247,26 +202,28 @@ class UserShow extends Component {
       if(user.name === this.props.resid) {
         rows_user.push(<UserRow2 user={user} key={user.name} onAddKarana={this.handleAddKarana}/>);
       }
+      return true
     });
     this.props.karanas.map((karana) => {
       if(karana.owner === this.props.resid){     
         rows_karana.push(<KaranaRow karana={karana} key={karana.name} />);
       }
+      return true
     });
     return (
       <div>
-	      <table>
+	      <Table striped bordered condensed hover>
 	        <thead>
 	          <UserPropertiesRow />
 	        </thead>
 	        <tbody>{rows_user}</tbody>
-	      </table>
-	      <table>
+	      </Table>
+	      <Table responsive>
 	        <thead>
 	          <KaranaPropertiesRow />
 	        </thead>
 	        <tbody>{rows_karana}</tbody>
-	      </table>
+	      </Table>
       </div>
     );
   }
@@ -318,6 +275,30 @@ class DisplayAction extends Component{
 		}
 		return <div> hello </div>
 	}
+}
+
+class SideBar extends Component {
+  constructor(props) {
+    super(props);
+    this.handleUserShowSelection = this.handleUserShowSelection.bind(this);
+    this.handleUserFormSelection = this.handleUserFormSelection.bind(this);
+  }
+  handleUserShowSelection(e) {
+    this.props.onResourceSelection('user','show');
+  }
+  
+  handleUserFormSelection(e) {
+    this.props.onResourceSelection('user','form');
+  }
+  
+  render() {
+    return(
+      <Nav bsStyle="nav-pills" activeKey={1}>
+        <NavItem eventKey={1} onClick={this.handleUserShowSelection}>Show Users</NavItem>
+        <NavItem eventKey={2} onClick={this.handleUserFormSelection}> Add User </NavItem>
+      </Nav>
+    );
+  }
 }
 
 
