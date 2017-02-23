@@ -34,11 +34,40 @@ class UserPropertiesRow extends Component {
 }
 
 class UserRow extends Component {
+	constructor(props) {
+    super(props);
+    this.handleUserSelection = this.handleUserSelection.bind(this);
+  }
+	handleUserSelection(e) {
+		console.log(this.props.user)
+    this.props.onUserSelection(this.props.user.name,'show');
+  }
   render() {
     return (
       <tr>
         <td>{this.props.user.name}</td>
         <td>{this.props.user.email}</td>
+        <td><a onClick={this.handleUserSelection}> Show Karanas </a></td>
+      </tr>
+    );
+  }
+}
+
+class UserRow2 extends Component {
+	constructor(props) {
+    super(props);
+    this.handleAddKarana = this.handleAddKarana.bind(this);
+  }
+	handleAddKarana(e) {
+		console.log(this.props.user)
+    this.props.onAddKarana('karana','form');
+  }
+  render() {
+    return (
+      <tr>
+        <td>{this.props.user.name}</td>
+        <td>{this.props.user.email}</td>
+				<td><a onClick={this.handleAddKarana}> Add Karanas </a></td>
       </tr>
     );
   }
@@ -97,6 +126,38 @@ class KaranaForm extends Component {
   }
 }
 
+class UserForm extends Component {
+	constructor(props) {
+    super(props);
+    this.state = {
+    	Name: '',
+    	Email:''
+    };
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleValueChange = this.handleValueChange.bind(this);
+  }
+
+	handleSubmit(event) {
+    alert('A name was submitted: ' + this.state.Name + ' ' + this.state.Email);
+    event.preventDefault();
+  }
+
+  handleValueChange(label,value) {
+  	this.setState({
+      [label]: value,
+    });
+  }
+
+	render() {
+    return (
+			<form onSubmit={this.handleSubmit}>
+        <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Email} label='Email' onValueChange={this.handleValueChange}/>
+        <input type="submit" value="Submit" />
+      </form>
+		);
+  }
+}
 
 class SideBar extends Component {
   constructor(props) {
@@ -136,24 +197,28 @@ class SideBar extends Component {
           <li >
             <a onClick={this.handleUserFormSelection}> Add User </a>
           </li>
-          <li >
-            <a onClick={this.handleKaranaShowSelection}> Show Karanas </a>
-          </li>
-          <li >
-            <a onClick={this.handleKaranaFormSelection}> Add Karana </a>
-          </li>
         </ul>
       </div>
     );
   }
 }
 
-class UserShow extends Component {
+class UsersShow extends Component {
+	constructor(props) {
+    super(props);
+    this.handleUserSelection = this.handleUserSelection.bind(this);
+    console.log(this)
+  }
+
+	handleUserSelection(user_id,type) {
+    this.props.onUserSelection(user_id,type);
+  }
+
   render() {
     var rows = [];
-    this.props.users.forEach(function(user) {    
-      rows.push(<UserRow user={user} key={user.name} />);
-    });
+    this.props.users.map((user) => 
+      rows.push(<UserRow user={user} key={user.name} onUserSelection={this.handleUserSelection} />)
+    );
     return (
       <table>
         <thead>
@@ -165,7 +230,49 @@ class UserShow extends Component {
   }
 }
 
-class KaranaShow extends Component {
+class UserShow extends Component {
+	constructor(props) {
+    super(props);
+    this.handleAddKarana = this.handleAddKarana.bind(this);
+    console.log(this)
+  }
+
+	handleAddKarana(resource,type) {
+    this.props.onAddKarana(resource,type);
+  }
+  render() {
+    var rows_user = [];
+    var rows_karana = [];
+    this.props.users.map((user) => {   
+      if(user.name === this.props.resid) {
+        rows_user.push(<UserRow2 user={user} key={user.name} onAddKarana={this.handleAddKarana}/>);
+      }
+    });
+    this.props.karanas.map((karana) => {
+      if(karana.owner === this.props.resid){     
+        rows_karana.push(<KaranaRow karana={karana} key={karana.name} />);
+      }
+    });
+    return (
+      <div>
+	      <table>
+	        <thead>
+	          <UserPropertiesRow />
+	        </thead>
+	        <tbody>{rows_user}</tbody>
+	      </table>
+	      <table>
+	        <thead>
+	          <KaranaPropertiesRow />
+	        </thead>
+	        <tbody>{rows_karana}</tbody>
+	      </table>
+      </div>
+    );
+  }
+}
+
+/*class KaranaShow extends Component {
   render() {
     var rows = [];
     this.props.karanas.forEach(function(karana) {    
@@ -180,42 +287,37 @@ class KaranaShow extends Component {
       </table>
     );
   }
-}
-// class ResourceForm extends Component {
-//     render() {
-//     var rows = [];
-//     if (this.props.resource === 'user'){
-//         rows.push(<UserInputRow />);
-//     } else {
-//         rows.push(<KaranaInputRow />);
-//     }
-//     return (
-//       <table>
-//         <thead>
-//           {this.props.resource === 'user' ? <UserInputPropertiesRow /> : <KaranaInputPropertiesRow />}
-//         </thead>
-//         <tbody>{rows}</tbody>
-//       </table>
-//     );
-//   }
-// }
+}*/
 
-function DisplayAction(props){
-	const res = props.resource
-	const type = props.type
-	if (res === 'karana' && type === 'show'){
-	 	return <KaranaShow karanas={props.karanas}/>
+class DisplayAction extends Component{
+	constructor(props) {
+    super(props);
+    this.handleUserSelection = this.handleUserSelection.bind(this);
+    this.handleAddKarana = this.handleAddKarana.bind(this);
+  }
+	handleUserSelection(user_id,type) {
+    this.props.onUserSelection(user_id,type);
+  }
+  handleAddKarana(resource,type) {
+    this.props.onAddKarana(resource,type);
+  }
+  render() {
+		const res = this.props.resource
+		const type = this.props.type
+		if (res !== 'karana' && res !== 'user' && type === 'show'){
+		 	return <UserShow resid={res} users={this.props.users} karanas={this.props.karanas} onAddKarana={this.handleAddKarana}/>
+		}
+		else if (res === 'user' && type === 'show'){
+		 	return <UsersShow users={this.props.users} onUserSelection={this.handleUserSelection}/>
+		}
+		else if (res === 'user' && type === 'form'){
+		 	return <UserForm />
+		}
+		else if (res === 'karana' && type === 'form'){
+		 	return <KaranaForm />
+		}
+		return <div> hello </div>
 	}
-	else if (res === 'user' && type === 'show'){
-	 	return <UserShow users={props.users}/>
-	}
-	else if (res === 'user' && type === 'form'){
-	 	return <div> Form for user</div>
-	}
-	else if (res === 'karana' && type === 'form'){
-	 	return <KaranaForm />
-	}
-	return <div> Hello </div>
 }
 
 
@@ -225,7 +327,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      resource: 'karana',
+      resource: 'user',
       type: 'show',
       karanas: [],
       users: [],
@@ -246,6 +348,7 @@ class App extends Component {
 		  {name: 'Tobias', email: 'tobias@ex.de'},
 	  ];
     this.handleResourceSelection = this.handleResourceSelection.bind(this);
+    this.handleUserSelection = this.handleUserSelection.bind(this);
   }
    componentDidMount() {
     this.setState({
@@ -260,12 +363,19 @@ class App extends Component {
       type: type
     });
   }
+  handleUserSelection(user_id,type) {
+    this.setState({
+      resource: user_id,
+      type: type
+    });
+  }
+
   render() {
 	 
     return (
       <div >
         <SideBar onResourceSelection={this.handleResourceSelection} />
-        <DisplayAction users={this.state.users} karanas={this.state.karanas} resource={this.state.resource} type={this.state.type}/>
+        <DisplayAction users={this.state.users} karanas={this.state.karanas} resource={this.state.resource} type={this.state.type} onUserSelection={this.handleUserSelection} onAddKarana={this.handleResourceSelection}/>
       </div>
     );
   }
