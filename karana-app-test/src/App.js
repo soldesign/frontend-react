@@ -3,11 +3,13 @@ import './App.css';
 import './css/bootstrap.css';
 import  { Table, Nav, NavItem } from 'react-bootstrap';
 
+var apiurl='http://localhost:8000/v1'
+
 class KaranaPropertiesRow extends Component {
   render() {
     return <tr>
             <th>Name</th>
-            <th>Owner</th>
+            <th>Note</th>
             <th>Link</th>
           </tr>;
   }
@@ -18,7 +20,7 @@ class KaranaRow extends Component {
     return (
       <tr>
         <td>{this.props.karana.name}</td>
-        <td>{this.props.karana.owner}</td>
+        <td>{this.props.karana.note}</td>
         <td><a href={this.props.karana.link}>link</a></td>
       </tr>
     );
@@ -41,7 +43,7 @@ class UserRow extends Component {
     this.handleUserSelection = this.handleUserSelection.bind(this);
   }
 	handleUserSelection(e) {
-    this.props.onUserSelection(this.props.user.name,'show');
+    this.props.onUserSelection(this.props.user.uuid,'show');
   }
   render() {
     return (
@@ -60,7 +62,7 @@ class UserRow2 extends Component {
     this.handleAddKarana = this.handleAddKarana.bind(this);
   }
 	handleAddKarana(e) {
-    this.props.onAddKarana('karana','form');
+    this.props.onAddKarana(this.props.user.uuid,'form_karana');
   }
   render() {
     return (
@@ -98,15 +100,41 @@ class KaranaForm extends Component {
     super(props);
     this.state = {
     	Name: '',
-    	Owner:''
+    	Owner: this.props.resid,
+    	Note:'',
+    	Post_Int:'30',
+    	Get_Int:'6'
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleValueChange = this.handleValueChange.bind(this);
   }
 
 	handleSubmit(event) {
-    alert('A name was submitted: ' + this.state.Name + ' ' + this.state.Owner);
-    event.preventDefault();
+		var data = JSON.stringify({
+		    name: this.state.Name,
+		    owner: this.state.Owner,
+		    note: this.state.Note,
+		    config: {
+		    	post_int: this.state.Post_Int,
+		    	get_int: this.state.Get_Int,
+		    },
+		  })
+		fetch(apiurl + "/karanas/new", {
+		  method: 'POST',
+		  headers: {
+		    'Accept': 'application/json',
+		    'Content-Type': 'application/json',
+		  },
+		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
+		}).then(function(response) {
+  		console.log(response.headers.get('Content-Type'))
+		  console.log(response.headers.get('Date'))
+		  console.log(response.status)
+		  console.log(response.statusText)
+		  alert('The response is ' + response.status)
+		})
+
+		event.preventDefault();
   }
 
   handleValueChange(label,value) {
@@ -120,6 +148,9 @@ class KaranaForm extends Component {
 			<form onSubmit={this.handleSubmit}>
         <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Owner} label='Owner' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Note} label='Note' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Post_Int} label='Post_Int' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Get_Int} label='Get_Int' onValueChange={this.handleValueChange}/>
         <input type="submit" value="Submit" />
       </form>
 		);
@@ -131,14 +162,38 @@ class UserForm extends Component {
     super(props);
     this.state = {
     	Name: '',
-    	Email:''
+    	Email:'',
+    	Role: '',
+      Password: ''
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleValueChange = this.handleValueChange.bind(this);
   }
 
 	handleSubmit(event) {
-    alert('A name was submitted: ' + this.state.Name + ' ' + this.state.Email);
+		var data = JSON.stringify({
+		    name: this.state.Name,
+		    email: this.state.Email,
+		    role: this.state.Role,
+		    credentials: {
+		    	login: this.state.Email,
+		    	password: this.state.Password,
+		    },
+		  })
+		fetch(apiurl + "/users/new", {
+		  method: 'POST',
+		  headers: {
+		    'Accept': 'application/json',
+		    'Content-Type': 'application/json',
+		  },
+		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
+		}).then(function(response) {
+  		console.log(response.headers.get('Content-Type'))
+		  console.log(response.headers.get('Date'))
+		  console.log(response.status)
+		  console.log(response.statusText)
+		  alert('The response is ' + response.status)
+		})
     event.preventDefault();
   }
 
@@ -153,6 +208,8 @@ class UserForm extends Component {
 			<form onSubmit={this.handleSubmit}>
         <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Email} label='Email' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Role} label='Role' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Password} label='Password' onValueChange={this.handleValueChange}/>
         <input type="submit" value="Submit" />
       </form>
 		);
@@ -172,8 +229,10 @@ class UsersShow extends Component {
 
   render() {
     var rows = [];
-    this.props.users.map((user) => 
-      rows.push(<UserRow user={user} key={user.name} onUserSelection={this.handleUserSelection} />)
+    var user_ids = Object.keys(this.props.users)
+    user_ids.map((user_id) => {
+      rows.push(<UserRow user={this.props.users[user_id]} key={this.props.users[user_id].uuid} onUserSelection={this.handleUserSelection} />)
+    }
     );
     return (
       <Table striped bordered condensed hover>
@@ -198,15 +257,17 @@ class UserShow extends Component {
   render() {
     var rows_user = [];
     var rows_karana = [];
-    this.props.users.map((user) => {   
-      if(user.name === this.props.resid) {
-        rows_user.push(<UserRow2 user={user} key={user.name} onAddKarana={this.handleAddKarana}/>);
+    var user_ids = Object.keys(this.props.users)
+    user_ids.map((user_id) => {
+      if(this.props.users[user_id].uuid === this.props.resid) {
+        rows_user.push(<UserRow2 user={this.props.users[user_id]} key={this.props.users[user_id].uuid} onAddKarana={this.handleAddKarana}/>);
       }
       return true
     });
-    this.props.karanas.map((karana) => {
-      if(karana.owner === this.props.resid){     
-        rows_karana.push(<KaranaRow karana={karana} key={karana.name} />);
+    var karana_ids = Object.keys(this.props.karanas)
+    karana_ids.map((karana_id) => {
+      if(this.props.karanas[karana_id].owner === this.props.resid){
+        rows_karana.push(<KaranaRow karana={this.props.karanas[karana_id]} key={this.props.karanas[karana_id].uuid} />);
       }
       return true
     });
@@ -229,22 +290,6 @@ class UserShow extends Component {
   }
 }
 
-/*class KaranaShow extends Component {
-  render() {
-    var rows = [];
-    this.props.karanas.forEach(function(karana) {    
-      rows.push(<KaranaRow karana={karana} key={karana.name} />);
-    });
-    return (
-      <table>
-        <thead>
-          <KaranaPropertiesRow />
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
-    );
-  }
-}*/
 
 class DisplayAction extends Component{
 	constructor(props) {
@@ -270,8 +315,8 @@ class DisplayAction extends Component{
 		else if (res === 'user' && type === 'form'){
 		 	return <UserForm />
 		}
-		else if (res === 'karana' && type === 'form'){
-		 	return <KaranaForm />
+		else if (res !== 'user' && type === 'form_karana'){
+		 	return <KaranaForm resid={res}/>
 		}
 		return <div> hello </div>
 	}
@@ -282,6 +327,7 @@ class SideBar extends Component {
     super(props);
     this.handleUserShowSelection = this.handleUserShowSelection.bind(this);
     this.handleUserFormSelection = this.handleUserFormSelection.bind(this);
+    this.sync_db = this.sync_db.bind(this);
   }
   handleUserShowSelection(e) {
     this.props.onResourceSelection('user','show');
@@ -290,12 +336,28 @@ class SideBar extends Component {
   handleUserFormSelection(e) {
     this.props.onResourceSelection('user','form');
   }
-  
+  sync_db(){
+  	fetch(apiurl + "/sync/db/all", {
+		  method: 'POST',
+		  headers: {
+		    'Accept': 'application/json',
+		    'Content-Type': 'application/json',
+		  },
+		  body: ''
+		}).then(function(response) {
+  		console.log(response.headers.get('Content-Type'))
+		  console.log(response.headers.get('Date'))
+		  console.log(response.status)
+		  console.log(response.statusText)
+		  alert('The response is ' + response.status)
+		})
+  }
   render() {
     return(
-      <Nav bsStyle="nav-pills" activeKey={1}>
+      <Nav bsStyle="pills" activeKey={1}>
         <NavItem eventKey={1} onClick={this.handleUserShowSelection}>Show Users</NavItem>
         <NavItem eventKey={2} onClick={this.handleUserFormSelection}> Add User </NavItem>
+        <NavItem eventKey={3} onClick={this.sync_db}> Sync DB </NavItem>
       </Nav>
     );
   }
@@ -303,39 +365,49 @@ class SideBar extends Component {
 
 
 
-
 class App extends Component {
   constructor(props) {
     super(props);
+    this.fetch_res()
     this.state = {
       resource: 'user',
       type: 'show',
       karanas: [],
       users: [],
     };
-    this.KARANAS = [
-		  {name: 'MichasKarana', owner: 'Micha', link: 'https://grafana.me-soldesign.com'},
-		  {name: 'MichasKarana2', owner: 'Micha', link: 'https://grafana.me-soldesign.com'},
-		  {name: 'SteffensKarana', owner: 'Steffen', link: 'https://grafana.me-soldesign.com'},
-		  {name: 'FranksKarana', owner: 'Frank', link: 'https://grafana.me-soldesign.com'},
-		  {name: 'SetusKarana', owner: 'Setu', link: 'https://grafana.me-soldesign.com'},
-		  {name: 'TobiasKarana', owner: 'Tobias', link: 'https://grafana.me-soldesign.com'},
-		];
-		this.USERS = [
-		  {name: 'Micha', email: 'micha@ex.de'},
-		  {name: 'Steffen', email: 'steffen@ex.de'},
-		  {name: 'Frank', email: 'frank@ex.de'},
-		  {name: 'Setu', email: 'setu@ex.de'},
-		  {name: 'Tobias', email: 'tobias@ex.de'},
-	  ];
     this.handleResourceSelection = this.handleResourceSelection.bind(this);
     this.handleUserSelection = this.handleUserSelection.bind(this);
   }
-   componentDidMount() {
-    this.setState({
-      karanas: this.KARANAS,
-      users: this.USERS
-    });
+  componentDidMount() {
+  	this.fetch_resID = setInterval(
+      () => this.fetch_res(),
+      5000
+    );
+
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.fetch_resID);
+  }
+
+  fetch_res() {
+  	fetch(apiurl + "/users")
+      .then(response => response.json())
+      .then(json => {
+        var user_list = JSON.parse(json)['results'][0]
+        this.setState({
+          users: user_list,
+        });
+      });
+
+	 	fetch(apiurl + "/karanas")
+      .then(response => response.json())
+      .then(json => {
+        var user_list = JSON.parse(json)['results'][0]
+        this.setState({
+          karanas: user_list,
+        });
+      });
   }
 
   handleResourceSelection(resource,type) {
