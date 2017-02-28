@@ -13,18 +13,31 @@ class KaranaPropertiesRow extends Component {
     return <tr>
             <th>Karana Name</th>
             <th>Note</th>
-            <th>Link</th>
+            <th>Grafana Link</th>
+            <th>Manage</th>
           </tr>;
   }
 }
 
 class KaranaRow extends Component {
+	constructor(props) {
+    super(props);
+    this.handleKaranaEdit = this.handleKaranaEdit.bind(this);
+    this.handleKaranaDelete = this.handleKaranaDelete.bind(this);
+  }
+	handleKaranaEdit(e) {
+    this.props.onKaranaSelection(this.props.karana,'edit_karana');
+  }
+  handleKaranaDelete(e) {
+    alert('Delete karana: for testing')
+  }
   render() {
     return (
       <tr>
         <td>{this.props.karana.name}</td>
         <td>{this.props.karana.note}</td>
-        <td><a href={grafanabase + '/dashboard/script/karanabase.js?u_id=' + this.props.karana.owner + '&k_id=' + this.props.karana.uuid } target="_blank">link</a></td>
+        <td><a href={grafanabase + '/dashboard/script/karanabase.js?u_id=' + this.props.karana.owner + '&k_id=' + this.props.karana.uuid } target="_blank">show data</a></td>
+        <td><a onClick={this.handleKaranaEdit} > edit </a> <a onClick={this.handleKaranaDelete} > delete </a></td>
       </tr>
     );
   }
@@ -37,6 +50,7 @@ class UserPropertiesRow extends Component {
             <th>Email</th>
             <th>Role</th>
             <th>Karana</th>
+            <th>Manage</th>
           </tr>;
   }
 }
@@ -45,9 +59,17 @@ class UserRow extends Component {
 	constructor(props) {
     super(props);
     this.handleUserSelection = this.handleUserSelection.bind(this);
+    this.handleUserEdit = this.handleUserEdit.bind(this);
+    this.handleUserDelete = this.handleUserDelete.bind(this);
   }
 	handleUserSelection(e) {
-    this.props.onUserSelection(this.props.user.uuid,'show');
+    this.props.onUserSelection(this.props.user.uuid,'show_user_karana');
+  }
+ 	handleUserEdit(e) {
+    this.props.onUserSelection(this.props.user,'edit_user');
+  }
+  handleUserDelete(e) {
+    alert('Delete user: for testing')
   }
   render() {
     return (
@@ -56,6 +78,7 @@ class UserRow extends Component {
         <td>{this.props.user.email}</td>
         <td>{this.props.user.role}</td>
         <td><a onClick={this.handleUserSelection}> Show Karanas </a></td>
+        <td><a onClick={this.handleUserEdit} > edit </a> <a onClick={this.handleUserDelete} > delete </a></td>
       </tr>
     );
   }
@@ -65,9 +88,17 @@ class UserRow2 extends Component {
 	constructor(props) {
     super(props);
     this.handleAddKarana = this.handleAddKarana.bind(this);
+    this.handleUserEdit = this.handleUserEdit.bind(this);
+    this.handleUserDelete = this.handleUserDelete.bind(this);
   }
 	handleAddKarana(e) {
-    this.props.onAddKarana(this.props.user.uuid,'form_karana');
+    this.props.onKaranaSelection(this.props.user.uuid,'form_karana');
+  }
+  handleUserEdit(e) {
+    this.props.onKaranaSelection(this.props.user,'edit_user');
+  }
+  handleUserDelete(e) {
+    alert('Delete user: for testing')
   }
   render() {
     return (
@@ -76,6 +107,7 @@ class UserRow2 extends Component {
         <td>{this.props.user.email}</td>
         <td>{this.props.user.role}</td>
 				<td><a onClick={this.handleAddKarana}> Add Karanas </a></td>
+        <td><a onClick={this.handleUserEdit} > edit </a> <a onClick={this.handleUserDelete} > delete </a></td>
       </tr>
     );
   }
@@ -98,7 +130,7 @@ class FormInputTemplate extends Component {
 	        {this.props.label}
 	      </Col>
 	      <Col sm={10}>
-	        <FormControl type="text" placeholder={this.props.label} onChange={this.handleChange}/>
+	        <FormControl type="text" value={this.props.value} onChange={this.handleChange}/>
 	      </Col>
 	    </FormGroup>
       //<FormGroup type="text" label={this.props.label} value={this.props.value} onChange={this.handleChange} />
@@ -159,6 +191,74 @@ class KaranaForm extends Component {
 			<Form horizontal onSubmit={this.handleSubmit}>
         <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Owner} label='Owner' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Note} label='Note' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Post_Int} label='Post_Int' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Get_Int} label='Get_Int' onValueChange={this.handleValueChange}/>
+				<FormGroup>
+		      <Col smOffset={2} sm={10}>
+		        <Button type="submit">
+		          Submit
+		        </Button>
+		      </Col>
+		    </FormGroup>      
+		  </Form>
+		);
+  }
+}
+
+class KaranaEdit extends Component {
+	constructor(props) {
+    super(props);
+    this.state = {
+    	Name: this.props.karana.name,
+    	//Owner: this.props..resid,
+    	Note:this.props.karana.note,
+    	Post_Int:this.props.karana.config.post_int,
+    	Get_Int:this.props.karana.config.get_int
+    };
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleValueChange = this.handleValueChange.bind(this);
+  }
+
+	handleSubmit(event) {
+		var data = JSON.stringify({
+		    name: this.state.Name,
+		    //owner: this.state.Owner,
+		    note: this.state.Note,
+		    config: {
+		    	post_int: this.state.Post_Int,
+		    	get_int: this.state.Get_Int,
+		    },
+		  })
+		alert('Edit User with: ' + this.state.Name + ' ' + this.state.Note)
+		fetch(apiurl + "/karanas/" + this.props.karana.uuid, {
+		  method: 'PUT',
+		  headers: {
+		    'Accept': 'application/json',
+		    'Content-Type': 'application/json',
+		  },
+		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
+		}).then(function(response) {
+  		console.log(response.headers.get('Content-Type'))
+		  console.log(response.headers.get('Date'))
+		  console.log(response.status)
+		  console.log(response.statusText)
+		  alert('The response is ' + response.status)
+		})
+
+		event.preventDefault();
+  }
+
+  handleValueChange(label,value) {
+  	this.setState({
+      [label]: value,
+    });
+  }
+
+	render() {
+    return (
+			<Form horizontal onSubmit={this.handleSubmit}>
+        <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Note} label='Note' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Post_Int} label='Post_Int' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Get_Int} label='Get_Int' onValueChange={this.handleValueChange}/>
@@ -239,6 +339,76 @@ class UserForm extends Component {
   }
 }
 
+class UserEdit extends Component {
+	constructor(props) {
+    super(props);
+    this.state = {
+    	Name: this.props.user.name,
+    	//Email:this.props.email,
+    	Role: this.props.user.role,
+      Password: ''
+    };
+    var pass = this.props.user.credentials.password
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleValueChange = this.handleValueChange.bind(this);
+  }
+
+	handleSubmit(event) {
+		if (this.state.Password !== ''){
+			this.pass = this.state.Password
+		}
+		var data = JSON.stringify({
+		    name: this.state.Name,
+		    //email: this.state.Email,
+		    role: this.state.Role,
+		    credentials: {
+		    	//login: this.state.Email,
+		    	password: this.pass,
+		    },
+		  })
+		alert('Edit User with: ' + this.state.Name + ' ' + this.state.Role)
+		fetch(apiurl + "/users/" + this.props.user.uuid, {
+		  method: 'PUT',
+		  headers: {
+		    'Accept': 'application/json',
+		    'Content-Type': 'application/json',
+		  },
+		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
+		}).then(function(response) {
+  		console.log(response.headers.get('Content-Type'))
+		  console.log(response.headers.get('Date'))
+		  console.log(response.status)
+		  console.log(response.statusText)
+		  alert('The response is ' + response.status)
+		})
+    event.preventDefault();
+  }
+
+  handleValueChange(label,value) {
+  	this.setState({
+      [label]: value,
+    });
+  }
+
+	render() {
+    return (
+			<Form horizontal onSubmit={this.handleSubmit}>
+         <ControlLabel>Edit User {this.props.user.email}</ControlLabel>
+        <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Role} label='Role' onValueChange={this.handleValueChange}/>
+        <FormInputTemplate value={this.state.Password} label='Password' onValueChange={this.handleValueChange}/>
+				<FormGroup>
+		      <Col smOffset={2} sm={10}>
+		        <Button type="submit">
+		          Submit
+		        </Button>
+		      </Col>
+		    </FormGroup>      
+		  </Form>
+		);
+  }
+}
+
 
 class UsersShow extends Component {
 	constructor(props) {
@@ -272,11 +442,11 @@ class UsersShow extends Component {
 class UserShow extends Component {
 	constructor(props) {
     super(props);
-    this.handleAddKarana = this.handleAddKarana.bind(this);
+    this.handleKaranaSelection = this.handleKaranaSelection.bind(this);
   }
 
-	handleAddKarana(resource,type) {
-    this.props.onAddKarana(resource,type);
+	handleKaranaSelection(resource,type) {
+    this.props.onKaranaSelection(resource,type);
   }
   render() {
     var rows_user = [];
@@ -284,14 +454,14 @@ class UserShow extends Component {
     var user_ids = Object.keys(this.props.users)
     user_ids.map((user_id) => {
       if(this.props.users[user_id].uuid === this.props.resid) {
-        rows_user.push(<UserRow2 user={this.props.users[user_id]} key={this.props.users[user_id].uuid} onAddKarana={this.handleAddKarana}/>);
+        rows_user.push(<UserRow2 user={this.props.users[user_id]} key={this.props.users[user_id].uuid} onKaranaSelection={this.handleKaranaSelection}/>);
       }
       return true
     });
     var karana_ids = Object.keys(this.props.karanas)
     karana_ids.map((karana_id) => {
       if(this.props.karanas[karana_id].owner === this.props.resid){
-        rows_karana.push(<KaranaRow karana={this.props.karanas[karana_id]} key={this.props.karanas[karana_id].uuid} />);
+        rows_karana.push(<KaranaRow karana={this.props.karanas[karana_id]} key={this.props.karanas[karana_id].uuid} onKaranaSelection={this.handleKaranaSelection} />);
       }
       return true
     });
@@ -318,29 +488,32 @@ class UserShow extends Component {
 class DisplayAction extends Component{
 	constructor(props) {
     super(props);
-    this.handleUserSelection = this.handleUserSelection.bind(this);
-    this.handleAddKarana = this.handleAddKarana.bind(this);
+    this.handleResourceSelection = this.handleResourceSelection.bind(this);
   }
-	handleUserSelection(user_id,type) {
-    this.props.onUserSelection(user_id,type);
+	handleResourceSelection(user_id,type) {
+    this.props.onResourceSelection(user_id,type);
   }
-  handleAddKarana(resource,type) {
-    this.props.onAddKarana(resource,type);
-  }
+
   render() {
 		const res = this.props.resource
 		const type = this.props.type
-		if (res !== 'karana' && res !== 'user' && type === 'show'){
-		 	return <UserShow resid={res} users={this.props.users} karanas={this.props.karanas} onAddKarana={this.handleAddKarana}/>
+		if ( type === 'show_user_karana'){
+		 	return <UserShow resid={res} users={this.props.users} karanas={this.props.karanas} onKaranaSelection={this.handleResourceSelection}/>
 		}
-		else if (res === 'user' && type === 'show'){
-		 	return <UsersShow users={this.props.users} onUserSelection={this.handleUserSelection}/>
+		else if (type === 'show_user'){
+		 	return <UsersShow users={this.props.users} onUserSelection={this.handleResourceSelection}/>
 		}
-		else if (res === 'user' && type === 'form'){
+		else if (type === 'form_user'){
 		 	return <UserForm />
 		}
-		else if (res !== 'user' && type === 'form_karana'){
+		else if (type === 'edit_user'){
+		 	return <UserEdit user={res} />
+		}
+		else if (type === 'form_karana'){
 		 	return <KaranaForm resid={res}/>
+		}
+		else if (type === 'edit_karana'){
+		 	return <KaranaEdit karana={res} />
 		}
 		return <div> hello </div>
 	}
@@ -354,11 +527,11 @@ class SideBar extends Component {
     this.sync_db = this.sync_db.bind(this);
   }
   handleUserShowSelection(e) {
-    this.props.onResourceSelection('user','show');
+    this.props.onResourceSelection('user','show_user');
   }
   
   handleUserFormSelection(e) {
-    this.props.onResourceSelection('user','form');
+    this.props.onResourceSelection('user','form_user');
   }
   sync_db(){
   	fetch(apiurl + "/sync/db/all", {
@@ -402,12 +575,11 @@ class App extends Component {
     this.fetch_res()
     this.state = {
       resource: 'user',
-      type: 'show',
+      type: 'show_user',
       karanas: [],
       users: [],
     };
     this.handleResourceSelection = this.handleResourceSelection.bind(this);
-    this.handleUserSelection = this.handleUserSelection.bind(this);
   }
   componentDidMount() {
   	this.fetch_resID = setInterval(
@@ -447,19 +619,14 @@ class App extends Component {
       type: type
     });
   }
-  handleUserSelection(user_id,type) {
-    this.setState({
-      resource: user_id,
-      type: type
-    });
-  }
+
 
   render() {
 	 
     return (
       <div >
         <SideBar onResourceSelection={this.handleResourceSelection} />
-        <DisplayAction users={this.state.users} karanas={this.state.karanas} resource={this.state.resource} type={this.state.type} onUserSelection={this.handleUserSelection} onAddKarana={this.handleResourceSelection}/>
+        <DisplayAction users={this.state.users} karanas={this.state.karanas} resource={this.state.resource} type={this.state.type} onResourceSelection={this.handleResourceSelection}/>
       </div>
     );
   }
