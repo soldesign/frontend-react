@@ -1,14 +1,17 @@
 import React, { Component } from 'react';
 import './App.css';
-import './css/bootstrap.css';
-import  { Table, Nav, NavItem } from 'react-bootstrap';
+import './css/bootstrap.min.css';
+import './css/bootstrap-grid.min.css';
+import './css/bootstrap-reboot.min.css';
+import  {Button, Table, Nav, NavItem, Navbar, FormGroup, Form, Col, FormControl, ControlLabel } from 'react-bootstrap';
 
 var apiurl='http://localhost:8000/v1'
+var grafanabase = 'https://grafana.me-soldesign.com'
 
 class KaranaPropertiesRow extends Component {
   render() {
     return <tr>
-            <th>Name</th>
+            <th>Karana Name</th>
             <th>Note</th>
             <th>Link</th>
           </tr>;
@@ -21,7 +24,7 @@ class KaranaRow extends Component {
       <tr>
         <td>{this.props.karana.name}</td>
         <td>{this.props.karana.note}</td>
-        <td><a href={this.props.karana.link}>link</a></td>
+        <td><a href={grafanabase + '/dashboard/script/karanabase.js?u_id=' + this.props.karana.owner + '&k_id=' + this.props.karana.uuid } target="_blank">link</a></td>
       </tr>
     );
   }
@@ -30,8 +33,9 @@ class KaranaRow extends Component {
 class UserPropertiesRow extends Component {
   render() {
     return <tr>
-            <th>Name</th>
+            <th>User Name</th>
             <th>Email</th>
+            <th>Role</th>
             <th>Karana</th>
           </tr>;
   }
@@ -50,6 +54,7 @@ class UserRow extends Component {
       <tr>
         <td>{this.props.user.name}</td>
         <td>{this.props.user.email}</td>
+        <td>{this.props.user.role}</td>
         <td><a onClick={this.handleUserSelection}> Show Karanas </a></td>
       </tr>
     );
@@ -69,6 +74,7 @@ class UserRow2 extends Component {
       <tr>
         <td>{this.props.user.name}</td>
         <td>{this.props.user.email}</td>
+        <td>{this.props.user.role}</td>
 				<td><a onClick={this.handleAddKarana}> Add Karanas </a></td>
       </tr>
     );
@@ -87,10 +93,15 @@ class FormInputTemplate extends Component {
 
   render() {
     return (
-      <label>
-        {this.props.label}
-        <input type="text" value={this.props.value} onChange={this.handleChange} />
-      </label>
+    	<FormGroup controlId="formHorizontalEmail">
+	      <Col componentClass={ControlLabel} sm={2}>
+	        {this.props.label}
+	      </Col>
+	      <Col sm={10}>
+	        <FormControl type="text" placeholder={this.props.label} onChange={this.handleChange}/>
+	      </Col>
+	    </FormGroup>
+      //<FormGroup type="text" label={this.props.label} value={this.props.value} onChange={this.handleChange} />
     );
   }
 }
@@ -145,14 +156,20 @@ class KaranaForm extends Component {
 
 	render() {
     return (
-			<form onSubmit={this.handleSubmit}>
+			<Form horizontal onSubmit={this.handleSubmit}>
         <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Owner} label='Owner' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Note} label='Note' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Post_Int} label='Post_Int' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Get_Int} label='Get_Int' onValueChange={this.handleValueChange}/>
-        <input type="submit" value="Submit" />
-      </form>
+				<FormGroup>
+		      <Col smOffset={2} sm={10}>
+		        <Button type="submit">
+		          Submit
+		        </Button>
+		      </Col>
+		    </FormGroup>      
+		  </Form>
 		);
   }
 }
@@ -205,13 +222,19 @@ class UserForm extends Component {
 
 	render() {
     return (
-			<form onSubmit={this.handleSubmit}>
+			<Form horizontal onSubmit={this.handleSubmit}>
         <FormInputTemplate value={this.state.Name} label='Name' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Email} label='Email' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Role} label='Role' onValueChange={this.handleValueChange}/>
         <FormInputTemplate value={this.state.Password} label='Password' onValueChange={this.handleValueChange}/>
-        <input type="submit" value="Submit" />
-      </form>
+				<FormGroup>
+		      <Col smOffset={2} sm={10}>
+		        <Button type="submit">
+		          Submit
+		        </Button>
+		      </Col>
+		    </FormGroup>      
+		  </Form>
 		);
   }
 }
@@ -232,6 +255,7 @@ class UsersShow extends Component {
     var user_ids = Object.keys(this.props.users)
     user_ids.map((user_id) => {
       rows.push(<UserRow user={this.props.users[user_id]} key={this.props.users[user_id].uuid} onUserSelection={this.handleUserSelection} />)
+    	return true
     }
     );
     return (
@@ -279,7 +303,7 @@ class UserShow extends Component {
 	        </thead>
 	        <tbody>{rows_user}</tbody>
 	      </Table>
-	      <Table responsive>
+	      <Table striped bordered condensed hover>
 	        <thead>
 	          <KaranaPropertiesRow />
 	        </thead>
@@ -354,11 +378,18 @@ class SideBar extends Component {
   }
   render() {
     return(
-      <Nav bsStyle="pills" activeKey={1}>
-        <NavItem eventKey={1} onClick={this.handleUserShowSelection}>Show Users</NavItem>
-        <NavItem eventKey={2} onClick={this.handleUserFormSelection}> Add User </NavItem>
-        <NavItem eventKey={3} onClick={this.sync_db}> Sync DB </NavItem>
-      </Nav>
+    	<Navbar>
+		    <Navbar.Header>
+		      <Navbar.Brand>
+		        <a href="#">Karana Management</a>
+		      </Navbar.Brand>
+		    </Navbar.Header>
+	      <Nav className="pills" activeKey={1}>
+	        <NavItem eventKey={1} onClick={this.handleUserShowSelection}>Show Users</NavItem>
+	        <NavItem eventKey={2} onClick={this.handleUserFormSelection}> Add User </NavItem>
+	        <NavItem eventKey={3} onClick={this.sync_db}> Sync DB </NavItem>
+	      </Nav>
+	    </Navbar>
     );
   }
 }
