@@ -5,7 +5,7 @@ import './css/bootstrap-grid.min.css';
 import './css/bootstrap-reboot.min.css';
 import  {Button, Table, Nav, NavItem, Navbar, FormGroup, Form, Col, FormControl, ControlLabel } from 'react-bootstrap';
 
-var apiurl='http://localhost:8000/v1'
+var apiurl='http://bintumaniapi.karana-desktop-1.mei/v1'
 var grafanabase = 'https://grafana.me-soldesign.com'
 
 class KaranaPropertiesRow extends Component {
