@@ -5,7 +5,7 @@ import './css/bootstrap-grid.min.css';
 import './css/bootstrap-reboot.min.css';
 import  {Button, Table, Nav, NavItem, Navbar, FormGroup, Form, Col, FormControl, ControlLabel } from 'react-bootstrap';
 
-var apiurl='http://bintumaniapi.karana-desktop-1.mei/v1'
+var apiurl='http://localhost:8000/v1'
 var grafanabase = 'https://grafana.me-soldesign.com'
 
 class KaranaPropertiesRow extends Component {
@@ -167,6 +167,7 @@ class KaranaForm extends Component {
 		  headers: {
 		    'Accept': 'application/json',
 		    'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ this.props.token,
 		  },
 		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
 		}).then(function(response) {
@@ -236,6 +237,7 @@ class KaranaEdit extends Component {
 		  headers: {
 		    'Accept': 'application/json',
 		    'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ this.props.token,
 		  },
 		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
 		}).then(function(response) {
@@ -302,6 +304,7 @@ class UserForm extends Component {
 		  headers: {
 		    'Accept': 'application/json',
 		    'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ this.props.token,
 		  },
 		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
 		}).then(function(response) {
@@ -372,6 +375,7 @@ class UserEdit extends Component {
 		  headers: {
 		    'Accept': 'application/json',
 		    'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ this.props.token,
 		  },
 		  body: '{"data":"' + data.replace(/"/g, '\\"') + '"}'
 		}).then(function(response) {
@@ -504,16 +508,16 @@ class DisplayAction extends Component{
 		 	return <UsersShow users={this.props.users} onUserSelection={this.handleResourceSelection}/>
 		}
 		else if (type === 'form_user'){
-		 	return <UserForm />
+		 	return <UserForm token={this.props.token}/>
 		}
 		else if (type === 'edit_user'){
-		 	return <UserEdit user={res} />
+		 	return <UserEdit token={this.props.token} user={res} />
 		}
 		else if (type === 'form_karana'){
-		 	return <KaranaForm resid={res}/>
+		 	return <KaranaForm token={this.props.token} resid={res}/>
 		}
 		else if (type === 'edit_karana'){
-		 	return <KaranaEdit karana={res} />
+		 	return <KaranaEdit token={this.props.token} karana={res} />
 		}
 		return <div> hello </div>
 	}
@@ -539,6 +543,7 @@ class SideBar extends Component {
 		  headers: {
 		    'Accept': 'application/json',
 		    'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ this.props.token,
 		  },
 		  body: ''
 		}).then(function(response) {
@@ -569,7 +574,7 @@ class SideBar extends Component {
 
 
 
-class App extends Component {
+class Management extends Component {
   constructor(props) {
     super(props);
     this.fetch_res()
@@ -594,7 +599,11 @@ class App extends Component {
   }
 
   fetch_res() {
-  	fetch(apiurl + "/users")
+  	fetch(apiurl + "/users", {
+      headers: {
+        'Authorization': 'Bearer '+ this.props.token
+      }
+    })
       .then(response => response.json())
       .then(json => {
         var user_list = JSON.parse(json)['results'][0]
@@ -603,7 +612,11 @@ class App extends Component {
         });
       });
 
-	 	fetch(apiurl + "/karanas")
+	 	fetch(apiurl + "/karanas", {
+      headers: {
+        'Authorization': 'Bearer '+ this.props.token
+      }
+    })
       .then(response => response.json())
       .then(json => {
         var user_list = JSON.parse(json)['results'][0]
@@ -625,10 +638,88 @@ class App extends Component {
 	 
     return (
       <div >
-        <SideBar onResourceSelection={this.handleResourceSelection} />
-        <DisplayAction users={this.state.users} karanas={this.state.karanas} resource={this.state.resource} type={this.state.type} onResourceSelection={this.handleResourceSelection}/>
+        <SideBar onResourceSelection={this.handleResourceSelection} token={this.props.token}/>
+        <DisplayAction token={this.props.token} users={this.state.users} karanas={this.state.karanas} resource={this.state.resource} type={this.state.type} onResourceSelection={this.handleResourceSelection}/>
       </div>
     );
+  }
+}
+
+class Login extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      email: '',
+      password: ''
+    };
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleValueChange = this.handleValueChange.bind(this);
+
+  }
+  handleSubmit(event) {
+    var data = JSON.stringify({
+        user: this.state.email,
+        password: this.state.password,
+    })
+    fetch(apiurl + "/users/login", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: data
+    }).then(response => response.json())
+      .then(json => {
+        var token = JSON.parse(json)['results'][0]['token']
+        this.props.onSetToken(token)
+        alert(token)
+      });
+
+    event.preventDefault();
+  }
+  handleValueChange(label,value) {
+    this.setState({
+      [label]: value,
+    });
+  }
+  render() {
+      return (
+        <Form horizontal onSubmit={this.handleSubmit}>
+          <FormInputTemplate value={this.state.Email} label='email' onValueChange={this.handleValueChange}/>
+          <FormInputTemplate value={this.state.Password} label='password' onValueChange={this.handleValueChange}/>
+          <FormGroup>
+            <Col smOffset={2} sm={10}>
+              <Button type="submit">
+                Login
+              </Button>
+            </Col>
+          </FormGroup>      
+        </Form>
+      );
+  }
+}
+
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      token: '',
+    }
+    this.handleSetToken = this.handleSetToken.bind(this);
+  }
+  handleSetToken(token) {
+    this.setState({
+      token: token,
+    });
+  }
+
+  render() {
+    if (this.state.token !== ''){
+      return <Management token={this.state.token} />
+    }
+    else {
+      return <Login onSetToken={this.handleSetToken}/>
+    }
   }
 }
 
